@@ -1,7 +1,7 @@
 <div align="center">
 
 # 🗂️ SRMS
-### Submission Review Management System
+### SUBMISSION REVIEW MANAGEMENT SYSTEM
 
 ![MERN Stack](https://img.shields.io/badge/Stack-MERN-green?style=for-the-badge)
 ![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)
