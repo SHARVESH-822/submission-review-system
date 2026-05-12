@@ -1,7 +1,7 @@
 <div align="center">
 
 # 🗂️ SRMS
-### Submission Review Management System
+### SUBMISSION REVIEW MANAGEMENT SYSTEM
 
 ![MERN Stack](https://img.shields.io/badge/Stack-MERN-green?style=for-the-badge)
 ![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)
@@ -18,7 +18,7 @@
 
 ---
 
-## 📌 Table of Contents
+## 📌 TABLE OF CONTENTS
 
 - [About the Project](#about-the-project)
 - [Features](#features)
@@ -33,37 +33,37 @@
 
 ---
 
-## 📖 About the Project
+## 📖 ABOUT THE PROJECT
 
 SRMS (Submission Review Management System) is a full-stack MERN application built for **FSD-11 Assignment**. It provides a structured digital workflow for contributors to submit entries and reviewers to evaluate them — with enforced resubmission limits, JWT-based authentication, and role-based access control.
 
 ---
 
-## ✨ Features
+## ✨ FEATURES
 
-### 👤 Contributor
+### 👤 CONTRIBUTOR
 - ✅ Register & Login with JWT authentication
 - ✅ Create submissions with **Unique ID**, title, description & file (PDF/DOCX, max 10MB)
 - ✅ Track submission status in real-time (PENDING / APPROVED / REJECTED)
 - ✅ Resubmit rejected entries — **maximum 2 times** enforced
 - ✅ View reviewer notes on rejected submissions
 
-### 🔍 Reviewer
+### 🔍 REVIEWER
 - ✅ View all submissions with contributor details
 - ✅ Filter submissions by status (ALL / PENDING / APPROVED / REJECTED)
 - ✅ Preview submitted files & view full contributor info via modal
 - ✅ Approve or Reject with optional review notes
 
-### ⚙️ Admin
+### ⚙️ ADMIN
 - ✅ View system-wide analytics dashboard
 - ✅ Monitor total users, submissions, approval/rejection stats
 - ✅ Manage all users — view roles and delete non-admin users
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ TECH STACK
 
-| Layer | Technology |
+| LAYER | TECHNOLOGY |
 |---|---|
 | Frontend | React.js 18, React Router DOM v6, Axios, Context API |
 | Backend | Node.js, Express.js |
@@ -74,9 +74,9 @@ SRMS (Submission Review Management System) is a full-stack MERN application buil
 
 ---
 
-## 👥 User Roles & Permissions
+## 👥 USER ROLES & PERMISSIONS
 
-| Permission | Contributor | Reviewer | Admin |
+| PERMISSION | CONTRIBUTOR | REVIEWER | ADMIN |
 |---|:---:|:---:|:---:|
 | Create Submission | ✅ | ❌ | ❌ |
 | View Own Submissions | ✅ | ❌ | ❌ |
@@ -89,16 +89,16 @@ SRMS (Submission Review Management System) is a full-stack MERN application buil
 
 ---
 
-## 🔗 API Endpoints
+## 🔗 API ENDPOINTS
 
-### Auth Routes
-| Method | Endpoint | Access | Description |
+### AUTH ROUTES
+| METHOD | ENDPOINT | ACCESS | DESCRIPTION |
 |---|---|---|---|
 | POST | `/api/auth/register` | Public | Register new user |
 | POST | `/api/auth/login` | Public | Login & get JWT token |
 
-### Submission Routes
-| Method | Endpoint | Access | Description |
+### SUBMISSION ROUTES
+| METHOD | ENDPOINT | ACCESS | DESCRIPTION |
 |---|---|---|---|
 | POST | `/api/submissions` | Contributor | Create new submission |
 | GET | `/api/submissions/my` | Contributor | Get own submissions |
@@ -106,8 +106,8 @@ SRMS (Submission Review Management System) is a full-stack MERN application buil
 | GET | `/api/submissions` | Reviewer/Admin | Get all submissions |
 | PUT | `/api/submissions/:id/review` | Reviewer | Approve or reject |
 
-### Admin Routes
-| Method | Endpoint | Access | Description |
+### ADMIN ROUTES
+| METHOD | ENDPOINT | ACCESS | DESCRIPTION |
 |---|---|---|---|
 | GET | `/api/admin/analytics` | Admin | System analytics |
 | GET | `/api/admin/users` | Admin | All users list |
@@ -115,9 +115,9 @@ SRMS (Submission Review Management System) is a full-stack MERN application buil
 
 ---
 
-## 🗄️ Database Schema
+## 🗄️ DATABASE SCHEMA
 
-### Users Collection
+### USERS COLLECTION
 ```json
 {
   "name": "String (required)",
@@ -128,7 +128,7 @@ SRMS (Submission Review Management System) is a full-stack MERN application buil
 }
 ```
 
-### Submissions Collection
+### SUBMISSIONS COLLECTION
 ```json
 {
   "uniqueId": "String (required, unique)",
@@ -146,7 +146,7 @@ SRMS (Submission Review Management System) is a full-stack MERN application buil
 
 ---
 
-## 🚀 Getting Started
+## 🚀 GETTING STARTED
 
 ### Prerequisites
 - Node.js v18+
