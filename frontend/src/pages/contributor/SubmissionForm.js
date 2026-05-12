@@ -25,10 +25,6 @@ const SubmissionForm = () => {
   const { id } = useParams();
   const isResubmit = Boolean(id);
 
-  useEffect(() => {
-    if (isResubmit) fetchSubmission();
-  }, [id]);
-
   const fetchSubmission = async () => {
     try {
       const res = await getMySubmissions();
@@ -44,6 +40,11 @@ const SubmissionForm = () => {
       setError('Failed to load submission.');
     }
   };
+
+  useEffect(() => {
+    if (isResubmit) fetchSubmission();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -92,16 +93,13 @@ const SubmissionForm = () => {
     setError('');
     setSuccess('');
     try {
-      // ✅ FIXED: Use FormData to send file to backend
-      // This sends the actual file to Cloudinary — not a temp URL
       const payload = new FormData();
       payload.append('uniqueId', formData.uniqueId);
       payload.append('title', formData.title);
       payload.append('description', formData.description);
       if (file) {
-        payload.append('file', file); // ✅ actual file sent to Cloudinary
+        payload.append('file', file);
       }
-
       if (isResubmit) {
         await resubmitEntry(id, payload);
         setSuccess('Resubmission successful!');
@@ -155,7 +153,6 @@ const SubmissionForm = () => {
           {success && <div style={styles.success}>✓ {success}</div>}
 
           <form onSubmit={handleSubmit}>
-
             <div style={styles.formGroup}>
               <label style={styles.label}>
                 Unique ID <span style={styles.required}>*</span>
@@ -221,11 +218,7 @@ const SubmissionForm = () => {
               <div
                 style={{
                   ...styles.dropZone,
-                  borderColor: file
-                    ? '#4A4A4A'
-                    : fileError
-                    ? '#e53e3e'
-                    : '#d0d0d0',
+                  borderColor: file ? '#4A4A4A' : fileError ? '#e53e3e' : '#d0d0d0',
                   backgroundColor: file ? '#f5f5f5' : '#fafafa'
                 }}
                 onDrop={handleDrop}
@@ -238,17 +231,12 @@ const SubmissionForm = () => {
                     </div>
                     <div style={styles.fileDetails}>
                       <div style={styles.fileName}>{file.name}</div>
-                      <div style={styles.fileSize}>
-                        {formatFileSize(file.size)}
-                      </div>
+                      <div style={styles.fileSize}>{formatFileSize(file.size)}</div>
                     </div>
                     <button
                       type='button'
                       style={styles.removeFile}
-                      onClick={() => {
-                        setFile(null);
-                        setFileError('');
-                      }}
+                      onClick={() => { setFile(null); setFileError(''); }}
                     >
                       ✕
                     </button>
@@ -272,9 +260,7 @@ const SubmissionForm = () => {
                   </div>
                 )}
               </div>
-              {fileError && (
-                <div style={styles.fileErrorMsg}>{fileError}</div>
-              )}
+              {fileError && <div style={styles.fileErrorMsg}>{fileError}</div>}
             </div>
 
             {isResubmit && (
@@ -297,11 +283,7 @@ const SubmissionForm = () => {
                 style={styles.submitButton}
                 disabled={loading}
               >
-                {loading
-                  ? 'Submitting...'
-                  : isResubmit
-                  ? 'Resubmit Entry'
-                  : 'Submit Entry'}
+                {loading ? 'Submitting...' : isResubmit ? 'Resubmit Entry' : 'Submit Entry'}
               </button>
             </div>
           </form>
@@ -318,221 +300,100 @@ const styles = {
   },
   container: { maxWidth: '760px', margin: '0 auto', padding: '32px 24px' },
   breadcrumb: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    marginBottom: '24px',
-    fontSize: '14px'
+    display: 'flex', alignItems: 'center', gap: '8px',
+    marginBottom: '24px', fontSize: '14px'
   },
-  breadcrumbLink: {
-    color: '#4A4A4A',
-    cursor: 'pointer',
-    fontWeight: '600'
-  },
+  breadcrumbLink: { color: '#4A4A4A', cursor: 'pointer', fontWeight: '600' },
   breadcrumbSep: { color: '#bbb' },
   breadcrumbCurrent: { color: '#999' },
   card: {
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    padding: '36px',
-    boxShadow: '0 4px 24px rgba(0,0,0,0.07)',
-    border: '1px solid #e8e8e8'
+    backgroundColor: 'white', borderRadius: '16px', padding: '36px',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.07)', border: '1px solid #e8e8e8'
   },
   cardHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    marginBottom: '32px',
-    paddingBottom: '24px',
-    borderBottom: '2px solid #f5f5f5'
+    display: 'flex', alignItems: 'center', gap: '16px',
+    marginBottom: '32px', paddingBottom: '24px', borderBottom: '2px solid #f5f5f5'
   },
   cardIconBox: {
-    fontSize: '28px',
-    width: '52px',
-    height: '52px',
+    fontSize: '28px', width: '52px', height: '52px',
     background: 'linear-gradient(135deg, #f5f5f5, #e8e8e8)',
-    borderRadius: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
+    borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center'
   },
-  cardTitle: {
-    fontSize: '22px',
-    fontWeight: '700',
-    color: '#2d2d2d',
-    marginBottom: '4px'
-  },
+  cardTitle: { fontSize: '22px', fontWeight: '700', color: '#2d2d2d', marginBottom: '4px' },
   cardSubtitle: { color: '#999', fontSize: '14px' },
   formGroup: { marginBottom: '24px' },
   label: {
-    display: 'block',
-    marginBottom: '8px',
-    color: '#555',
-    fontSize: '13px',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px'
+    display: 'block', marginBottom: '8px', color: '#555',
+    fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px'
   },
   required: { color: '#e53e3e' },
-  optional: {
-    color: '#aaa',
-    fontSize: '11px',
-    fontWeight: '400',
-    textTransform: 'none',
-    letterSpacing: '0'
-  },
-  fieldHint: {
-    fontSize: '12px',
-    color: '#aaa',
-    marginTop: '6px'
-  },
+  optional: { color: '#aaa', fontSize: '11px', fontWeight: '400', textTransform: 'none', letterSpacing: '0' },
+  fieldHint: { fontSize: '12px', color: '#aaa', marginTop: '6px' },
   input: {
-    width: '100%',
-    padding: '12px 16px',
-    border: '1.5px solid #e0e0e0',
-    borderRadius: '10px',
-    fontSize: '14px',
-    color: '#2d2d2d',
-    outline: 'none',
-    boxSizing: 'border-box',
-    backgroundColor: '#fafafa'
+    width: '100%', padding: '12px 16px', border: '1.5px solid #e0e0e0',
+    borderRadius: '10px', fontSize: '14px', color: '#2d2d2d',
+    outline: 'none', boxSizing: 'border-box', backgroundColor: '#fafafa'
   },
   textarea: {
-    width: '100%',
-    padding: '12px 16px',
-    border: '1.5px solid #e0e0e0',
-    borderRadius: '10px',
-    fontSize: '14px',
-    color: '#2d2d2d',
-    outline: 'none',
-    boxSizing: 'border-box',
-    backgroundColor: '#fafafa',
-    resize: 'vertical',
-    lineHeight: '1.6',
-    fontFamily: 'inherit'
+    width: '100%', padding: '12px 16px', border: '1.5px solid #e0e0e0',
+    borderRadius: '10px', fontSize: '14px', color: '#2d2d2d', outline: 'none',
+    boxSizing: 'border-box', backgroundColor: '#fafafa', resize: 'vertical',
+    lineHeight: '1.6', fontFamily: 'inherit'
   },
-  charCount: {
-    textAlign: 'right',
-    fontSize: '12px',
-    color: '#bbb',
-    marginTop: '6px'
-  },
+  charCount: { textAlign: 'right', fontSize: '12px', color: '#bbb', marginTop: '6px' },
   constraintBox: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    marginBottom: '10px',
+    display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px',
     background: 'linear-gradient(135deg, #f5f5f5, #ececec)',
-    padding: '8px 14px',
-    borderRadius: '8px',
-    border: '1px solid #e0e0e0'
+    padding: '8px 14px', borderRadius: '8px', border: '1px solid #e0e0e0'
   },
   constraintItem: { fontSize: '12px', color: '#666', fontWeight: '500' },
   constraintDot: { color: '#ccc', fontSize: '10px' },
   dropZone: {
-    border: '2px dashed',
-    borderRadius: '12px',
-    padding: '28px 20px',
-    textAlign: 'center',
-    transition: 'all 0.2s',
-    cursor: 'pointer'
+    border: '2px dashed', borderRadius: '12px', padding: '28px 20px',
+    textAlign: 'center', transition: 'all 0.2s', cursor: 'pointer'
   },
-  dropContent: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '8px'
-  },
+  dropContent: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' },
   dropIcon: { fontSize: '32px' },
   dropText: { fontSize: '14px', color: '#666' },
-  browseLabel: {
-    color: '#4A4A4A',
-    fontWeight: '600',
-    cursor: 'pointer',
-    textDecoration: 'underline'
-  },
+  browseLabel: { color: '#4A4A4A', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline' },
   dropHint: { fontSize: '12px', color: '#bbb' },
-  filePreview: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '14px',
-    padding: '4px 8px'
-  },
+  filePreview: { display: 'flex', alignItems: 'center', gap: '14px', padding: '4px 8px' },
   fileIcon: { fontSize: '28px' },
   fileDetails: { flex: 1, textAlign: 'left' },
   fileName: { fontSize: '14px', fontWeight: '600', color: '#2d2d2d' },
   fileSize: { fontSize: '12px', color: '#999', marginTop: '2px' },
   removeFile: {
-    backgroundColor: '#f5f5f5',
-    border: '1px solid #e0e0e0',
-    borderRadius: '6px',
-    padding: '4px 10px',
-    cursor: 'pointer',
-    color: '#888',
-    fontSize: '12px'
+    backgroundColor: '#f5f5f5', border: '1px solid #e0e0e0', borderRadius: '6px',
+    padding: '4px 10px', cursor: 'pointer', color: '#888', fontSize: '12px'
   },
   fileErrorMsg: {
-    marginTop: '8px',
-    fontSize: '13px',
-    color: '#e53e3e',
-    backgroundColor: '#fff5f5',
-    padding: '8px 12px',
-    borderRadius: '8px',
-    borderLeft: '3px solid #e53e3e'
+    marginTop: '8px', fontSize: '13px', color: '#e53e3e',
+    backgroundColor: '#fff5f5', padding: '8px 12px',
+    borderRadius: '8px', borderLeft: '3px solid #e53e3e'
   },
   infoBox: {
-    backgroundColor: '#fffbeb',
-    border: '1px solid #fcd34d',
-    borderRadius: '10px',
-    padding: '14px 16px',
-    fontSize: '13px',
-    color: '#92400e',
-    marginBottom: '24px',
-    lineHeight: '1.6'
+    backgroundColor: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '10px',
+    padding: '14px 16px', fontSize: '13px', color: '#92400e',
+    marginBottom: '24px', lineHeight: '1.6'
   },
-  buttons: {
-    display: 'flex',
-    gap: '12px',
-    justifyContent: 'flex-end',
-    marginTop: '8px'
-  },
+  buttons: { display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' },
   cancelButton: {
-    padding: '12px 28px',
-    background: 'linear-gradient(135deg, #f5f5f5, #e8e8e8)',
-    color: '#666',
-    border: '1.5px solid #e0e0e0',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '600'
+    padding: '12px 28px', background: 'linear-gradient(135deg, #f5f5f5, #e8e8e8)',
+    color: '#666', border: '1.5px solid #e0e0e0', borderRadius: '10px',
+    cursor: 'pointer', fontSize: '14px', fontWeight: '600'
   },
   submitButton: {
-    padding: '12px 28px',
-    background: 'linear-gradient(135deg, #4A4A4A, #2d2d2d)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '600'
+    padding: '12px 28px', background: 'linear-gradient(135deg, #4A4A4A, #2d2d2d)',
+    color: 'white', border: 'none', borderRadius: '10px',
+    cursor: 'pointer', fontSize: '14px', fontWeight: '600'
   },
   error: {
-    backgroundColor: '#fff5f5',
-    color: '#e53e3e',
-    padding: '12px 16px',
-    borderRadius: '10px',
-    marginBottom: '20px',
-    fontSize: '14px',
-    borderLeft: '3px solid #e53e3e'
+    backgroundColor: '#fff5f5', color: '#e53e3e', padding: '12px 16px',
+    borderRadius: '10px', marginBottom: '20px', fontSize: '14px', borderLeft: '3px solid #e53e3e'
   },
   success: {
-    backgroundColor: '#f0fdf4',
-    color: '#16a34a',
-    padding: '12px 16px',
-    borderRadius: '10px',
-    marginBottom: '20px',
-    fontSize: '14px',
-    borderLeft: '3px solid #16a34a'
+    backgroundColor: '#f0fdf4', color: '#16a34a', padding: '12px 16px',
+    borderRadius: '10px', marginBottom: '20px', fontSize: '14px', borderLeft: '3px solid #16a34a'
   }
 };
 
