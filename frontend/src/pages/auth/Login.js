@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { loginUser } from '../../services/api';
+import { forgotPassword, loginUser, resetPassword } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import Logo from '../../components/Logo';
 
@@ -10,6 +10,16 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [savedEmails, setSavedEmails] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [resetFormData, setResetFormData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [resetToken, setResetToken] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetError, setResetError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -26,6 +36,30 @@ const Login = () => {
   const handleEmailSelect = (email) => {
     setFormData({ ...formData, email });
     setShowSuggestions(false);
+  };
+
+  const handleResetChange = (e) => {
+    setResetFormData({ ...resetFormData, [e.target.name]: e.target.value });
+  };
+
+  const openResetForm = () => {
+    setShowResetForm(true);
+    setResetToken('');
+    setResetMessage('');
+    setResetError('');
+    setResetFormData({
+      email: formData.email,
+      password: '',
+      confirmPassword: ''
+    });
+  };
+
+  const closeResetForm = () => {
+    setShowResetForm(false);
+    setResetToken('');
+    setResetMessage('');
+    setResetError('');
+    setResetFormData({ email: '', password: '', confirmPassword: '' });
   };
 
   const filteredEmails = savedEmails.filter((item) =>
@@ -57,6 +91,54 @@ const Login = () => {
       setError(err.response?.data?.message || 'Login failed.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setResetLoading(true);
+    setResetError('');
+    setResetMessage('');
+    try {
+      const res = await forgotPassword({ email: resetFormData.email });
+      setResetToken(res.data.data.resetToken);
+      setResetMessage(res.data.message || 'Email verified. Enter a new password.');
+    } catch (err) {
+      setResetError(err.response?.data?.message || 'Unable to start password reset.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setResetLoading(true);
+    setResetError('');
+    setResetMessage('');
+
+    if (resetFormData.password !== resetFormData.confirmPassword) {
+      setResetError('Passwords do not match.');
+      setResetLoading(false);
+      return;
+    }
+
+    try {
+      const res = await resetPassword({
+        token: resetToken,
+        password: resetFormData.password
+      });
+      setFormData({ email: resetFormData.email, password: '' });
+      setResetMessage(res.data.message || 'Password updated successfully. Please sign in.');
+      setResetToken('');
+      setResetFormData({
+        email: resetFormData.email,
+        password: '',
+        confirmPassword: ''
+      });
+    } catch (err) {
+      setResetError(err.response?.data?.message || 'Unable to reset password.');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -116,7 +198,12 @@ const Login = () => {
             </div>
 
             <div style={styles.formGroup}>
-              <label style={styles.label}>Password</label>
+              <div style={styles.passwordHeader}>
+                <label style={{ ...styles.label, marginBottom: 0 }}>Password</label>
+                <button type='button' style={styles.textButton} onClick={openResetForm}>
+                  Forgot password?
+                </button>
+              </div>
               <input
                 style={styles.input}
                 type='password'
@@ -132,6 +219,74 @@ const Login = () => {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
+
+          {showResetForm && (
+            <div style={styles.resetPanel}>
+              <div style={styles.resetHeader}>
+                <h3 style={styles.resetTitle}>
+                  {resetToken ? 'SET NEW PASSWORD' : 'RESET PASSWORD'}
+                </h3>
+                <button type='button' style={styles.closeButton} onClick={closeResetForm}>
+                  x
+                </button>
+              </div>
+
+              {resetError && <div style={styles.resetError}>{resetError}</div>}
+              {resetMessage && <div style={styles.resetSuccess}>{resetMessage}</div>}
+
+              {!resetToken ? (
+                <form onSubmit={handleForgotPassword}>
+                  <div style={styles.formGroup}>
+                    <label style={styles.label}>Email Address</label>
+                    <input
+                      style={styles.input}
+                      type='email'
+                      name='email'
+                      value={resetFormData.email}
+                      onChange={handleResetChange}
+                      required
+                      placeholder='Enter your email'
+                    />
+                  </div>
+                  <button style={styles.secondaryButton} type='submit' disabled={resetLoading}>
+                    {resetLoading ? 'Checking...' : 'Verify Email'}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleResetPassword}>
+                  <div style={styles.formGroup}>
+                    <label style={styles.label}>New Password</label>
+                    <input
+                      style={styles.input}
+                      type='password'
+                      name='password'
+                      value={resetFormData.password}
+                      onChange={handleResetChange}
+                      required
+                      minLength='6'
+                      placeholder='Enter new password'
+                    />
+                  </div>
+                  <div style={styles.formGroup}>
+                    <label style={styles.label}>Confirm Password</label>
+                    <input
+                      style={styles.input}
+                      type='password'
+                      name='confirmPassword'
+                      value={resetFormData.confirmPassword}
+                      onChange={handleResetChange}
+                      required
+                      minLength='6'
+                      placeholder='Confirm new password'
+                    />
+                  </div>
+                  <button style={styles.secondaryButton} type='submit' disabled={resetLoading}>
+                    {resetLoading ? 'Updating...' : 'Update Password'}
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
 
           <p style={styles.link}>
             Don't have an account?{' '}
@@ -172,6 +327,13 @@ const styles = {
   title: { fontSize: '26px', fontWeight: '700', color: '#2d2d2d', marginBottom: '6px' },
   subtitle: { color: '#999', fontSize: '14px', marginBottom: '28px' },
   formGroup: { marginBottom: '20px' },
+  passwordHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '12px',
+    marginBottom: '8px'
+  },
   label: {
     display: 'block',
     marginBottom: '8px',
@@ -180,6 +342,15 @@ const styles = {
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: '0.5px'
+  },
+  textButton: {
+    border: 'none',
+    background: 'transparent',
+    color: '#4A4A4A',
+    fontSize: '13px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    padding: 0
   },
   input: {
     width: '100%',
@@ -228,6 +399,18 @@ const styles = {
     marginTop: '8px',
     letterSpacing: '0.3px'
   },
+  secondaryButton: {
+    width: '100%',
+    padding: '12px',
+    backgroundColor: '#4A4A4A',
+    color: 'white',
+    border: 'none',
+    borderRadius: '10px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    letterSpacing: '0.3px'
+  },
   error: {
     backgroundColor: '#fff5f5',
     color: '#e53e3e',
@@ -236,6 +419,52 @@ const styles = {
     marginBottom: '20px',
     fontSize: '14px',
     borderLeft: '3px solid #e53e3e'
+  },
+  resetPanel: {
+    marginTop: '20px',
+    padding: '18px',
+    border: '1.5px solid #e0e0e0',
+    borderRadius: '10px',
+    backgroundColor: '#fafafa'
+  },
+  resetHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '16px'
+  },
+  resetTitle: {
+    margin: 0,
+    color: '#2d2d2d',
+    fontSize: '15px',
+    fontWeight: '700',
+    letterSpacing: '0.5px'
+  },
+  closeButton: {
+    border: 'none',
+    background: 'transparent',
+    color: '#999',
+    cursor: 'pointer',
+    fontSize: '18px',
+    lineHeight: 1
+  },
+  resetError: {
+    backgroundColor: '#fff5f5',
+    color: '#e53e3e',
+    padding: '10px 12px',
+    borderRadius: '8px',
+    marginBottom: '14px',
+    fontSize: '13px',
+    borderLeft: '3px solid #e53e3e'
+  },
+  resetSuccess: {
+    backgroundColor: '#f0fff4',
+    color: '#2f855a',
+    padding: '10px 12px',
+    borderRadius: '8px',
+    marginBottom: '14px',
+    fontSize: '13px',
+    borderLeft: '3px solid #2f855a'
   },
   link: { textAlign: 'center', marginTop: '24px', fontSize: '14px', color: '#999' },
   suggestionAvatar: {

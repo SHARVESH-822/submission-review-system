@@ -23,7 +23,9 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ['CONTRIBUTOR', 'REVIEWER', 'ADMIN'],
       default: 'CONTRIBUTOR'
-    }
+    },
+    passwordResetToken: String,
+    passwordResetExpires: Date
   },
   { timestamps: true }
 );

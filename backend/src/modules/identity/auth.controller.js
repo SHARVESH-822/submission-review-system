@@ -1,4 +1,9 @@
-const { registerUser, loginUser } = require('./auth.service');
+const {
+  registerUser,
+  loginUser,
+  createPasswordResetToken,
+  resetPassword
+} = require('./auth.service');
 const { successResponse } = require('../../utils/response.util');
 const asyncHandler = require('../../utils/asyncHandler.util');
 
@@ -14,4 +19,16 @@ const login = asyncHandler(async (req, res) => {
   return successResponse(res, 200, 'Login successful.', result);
 });
 
-module.exports = { register, login };
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const result = await createPasswordResetToken({ email });
+  return successResponse(res, 200, 'Password reset verified. Please enter a new password.', result);
+});
+
+const updatePassword = asyncHandler(async (req, res) => {
+  const { token, password } = req.body;
+  const result = await resetPassword({ token, password });
+  return successResponse(res, 200, 'Password updated successfully. Please sign in.', result);
+});
+
+module.exports = { register, login, forgotPassword, updatePassword };
