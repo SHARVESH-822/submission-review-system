@@ -96,6 +96,9 @@ SRMS (Submission Review Management System) is a full-stack MERN application buil
 |---|---|---|---|
 | POST | `/api/auth/register` | Public | Register new user |
 | POST | `/api/auth/login` | Public | Login & get JWT token |
+| POST | `/api/auth/forgot-password` | Public | Send password reset OTP by email |
+| POST | `/api/auth/verify-reset-otp` | Public | Verify OTP and create reset session |
+| POST | `/api/auth/reset-password` | Public | Update password after OTP verification |
 
 ### SUBMISSION ROUTES
 | METHOD | ENDPOINT | ACCESS | DESCRIPTION |
@@ -180,6 +183,14 @@ MONGO_URI=mongodb://localhost:27017/submission-review-db
 JWT_SECRET=your_jwt_secret_key
 JWT_EXPIRES_IN=7d
 NODE_ENV=development
+
+# Mail settings for forgot-password OTP
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_app_password
+SMTP_FROM=SRMS <your_email@gmail.com>
 ```
 
 **5. Run the application**

@@ -24,6 +24,8 @@ const userSchema = new mongoose.Schema(
       enum: ['CONTRIBUTOR', 'REVIEWER', 'ADMIN'],
       default: 'CONTRIBUTOR'
     },
+    passwordResetOtp: String,
+    passwordResetOtpExpires: Date,
     passwordResetToken: String,
     passwordResetExpires: Date
   },

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { forgotPassword, loginUser, resetPassword } from '../../services/api';
+import { forgotPassword, loginUser, resetPassword, verifyResetOtp } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import Logo from '../../components/Logo';
 
@@ -11,8 +11,10 @@ const Login = () => {
   const [savedEmails, setSavedEmails] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showResetForm, setShowResetForm] = useState(false);
+  const [resetStep, setResetStep] = useState('email');
   const [resetFormData, setResetFormData] = useState({
     email: '',
+    otp: '',
     password: '',
     confirmPassword: ''
   });
@@ -20,12 +22,19 @@ const Login = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetMessage, setResetMessage] = useState('');
   const [resetError, setResetError] = useState('');
+  const [isCompact, setIsCompact] = useState(window.innerWidth < 820);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     const emails = JSON.parse(localStorage.getItem('savedEmails') || '[]');
     setSavedEmails(emails);
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => setIsCompact(window.innerWidth < 820);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const handleChange = (e) => {
@@ -44,11 +53,13 @@ const Login = () => {
 
   const openResetForm = () => {
     setShowResetForm(true);
+    setResetStep('email');
     setResetToken('');
     setResetMessage('');
     setResetError('');
     setResetFormData({
       email: formData.email,
+      otp: '',
       password: '',
       confirmPassword: ''
     });
@@ -56,10 +67,11 @@ const Login = () => {
 
   const closeResetForm = () => {
     setShowResetForm(false);
+    setResetStep('email');
     setResetToken('');
     setResetMessage('');
     setResetError('');
-    setResetFormData({ email: '', password: '', confirmPassword: '' });
+    setResetFormData({ email: '', otp: '', password: '', confirmPassword: '' });
   };
 
   const filteredEmails = savedEmails.filter((item) =>
@@ -101,10 +113,30 @@ const Login = () => {
     setResetMessage('');
     try {
       const res = await forgotPassword({ email: resetFormData.email });
-      setResetToken(res.data.data.resetToken);
-      setResetMessage(res.data.message || 'Email verified. Enter a new password.');
+      setResetStep('otp');
+      setResetMessage(res.data.message || 'OTP sent to your registered email address.');
     } catch (err) {
-      setResetError(err.response?.data?.message || 'Unable to start password reset.');
+      setResetError(err.response?.data?.message || 'Unable to send OTP.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setResetLoading(true);
+    setResetError('');
+    setResetMessage('');
+    try {
+      const res = await verifyResetOtp({
+        email: resetFormData.email,
+        otp: resetFormData.otp
+      });
+      setResetToken(res.data.data.resetToken);
+      setResetStep('password');
+      setResetMessage(res.data.message || 'OTP verified. Please enter a new password.');
+    } catch (err) {
+      setResetError(err.response?.data?.message || 'Invalid OTP.');
     } finally {
       setResetLoading(false);
     }
@@ -128,10 +160,12 @@ const Login = () => {
         password: resetFormData.password
       });
       setFormData({ email: resetFormData.email, password: '' });
-      setResetMessage(res.data.message || 'Password updated successfully. Please sign in.');
       setResetToken('');
+      setResetStep('done');
+      setResetMessage(res.data.message || 'Password updated successfully. Please sign in.');
       setResetFormData({
         email: resetFormData.email,
+        otp: '',
         password: '',
         confirmPassword: ''
       });
@@ -142,16 +176,72 @@ const Login = () => {
     }
   };
 
+  const shellStyle = {
+    ...styles.shell,
+    flexDirection: isCompact ? 'column' : 'row',
+    maxWidth: isCompact ? '430px' : '980px'
+  };
+
+  const sidePanelStyle = {
+    ...styles.sidePanel,
+    width: isCompact ? '100%' : '38%',
+    minHeight: isCompact ? 'auto' : '640px'
+  };
+
+  const cardStyle = {
+    ...styles.card,
+    width: isCompact ? '100%' : '62%',
+    padding: isCompact ? '28px' : '44px'
+  };
+
+  const resetTitle =
+    resetStep === 'otp'
+      ? 'Verify email OTP'
+      : resetStep === 'password'
+        ? 'Create new password'
+        : resetStep === 'done'
+          ? 'Password updated'
+          : 'Reset password';
+
   return (
     <div style={styles.page}>
-      <div style={styles.center}>
-        <div style={styles.logoBox}>
-          <Logo size="large" />
-        </div>
-        <div style={styles.card}>
-          <h2 style={styles.title}>SIGN IN</h2>
-          <br></br>
-          <p style={styles.subtitle}>ENTER YOUR CREDENTIALS TO CONTINUE</p>
+      <div style={shellStyle}>
+        <aside style={sidePanelStyle}>
+          <div style={styles.brandBlock}>
+            <Logo size={isCompact ? 'small' : 'large'} />
+            <div style={styles.brandDivider}></div>
+            <h1 style={styles.heroTitle}>Secure submission review starts here.</h1>
+            <p style={styles.heroText}>
+              Sign in to manage submissions, reviews, resubmissions, and approvals from one SRMS workspace.
+            </p>
+          </div>
+
+          <div style={styles.roleGrid}>
+            <div style={styles.roleChip}>Contributor</div>
+            <div style={styles.roleChip}>Reviewer</div>
+            <div style={styles.roleChip}>Admin</div>
+          </div>
+
+          <div style={styles.sideStats}>
+            <div>
+              <div style={styles.statNumber}>3</div>
+              <div style={styles.statLabel}>profile access</div>
+            </div>
+            <div>
+              <div style={styles.statNumber}>JWT</div>
+              <div style={styles.statLabel}>secured login</div>
+            </div>
+          </div>
+        </aside>
+
+        <main style={cardStyle}>
+          <div style={styles.cardHeader}>
+            <div>
+              <div style={styles.eyebrow}>SRMS ACCOUNT ACCESS</div>
+              <h2 style={styles.title}>Welcome back</h2>
+              <p style={styles.subtitle}>Enter your credentials to continue.</p>
+            </div>
+          </div>
 
           {error && <div style={styles.error}>{error}</div>}
 
@@ -183,7 +273,7 @@ const Login = () => {
                           onMouseDown={() => handleEmailSelect(email)}
                         >
                           <div style={styles.suggestionAvatar}>
-                            {name ? name.charAt(0).toUpperCase() : '✉'}
+                            {name ? name.charAt(0).toUpperCase() : '@'}
                           </div>
                           <div style={styles.suggestionInfo}>
                             {name && <div style={styles.suggestionName}>{name}</div>}
@@ -221,23 +311,40 @@ const Login = () => {
           </form>
 
           {showResetForm && (
-            <div style={styles.resetPanel}>
+            <section style={styles.resetPanel}>
               <div style={styles.resetHeader}>
-                <h3 style={styles.resetTitle}>
-                  {resetToken ? 'SET NEW PASSWORD' : 'RESET PASSWORD'}
-                </h3>
+                <div>
+                  <div style={styles.resetEyebrow}>ACCOUNT RECOVERY</div>
+                  <h3 style={styles.resetTitle}>{resetTitle}</h3>
+                </div>
                 <button type='button' style={styles.closeButton} onClick={closeResetForm}>
                   x
                 </button>
               </div>
 
+              <div style={styles.steps}>
+                {['email', 'otp', 'password'].map((step, index) => (
+                  <div
+                    key={step}
+                    style={{
+                      ...styles.stepPill,
+                      ...(resetStep === step || (resetStep === 'done' && step === 'password')
+                        ? styles.stepPillActive
+                        : {})
+                    }}
+                  >
+                    {index + 1}. {step === 'email' ? 'Email' : step === 'otp' ? 'OTP' : 'Password'}
+                  </div>
+                ))}
+              </div>
+
               {resetError && <div style={styles.resetError}>{resetError}</div>}
               {resetMessage && <div style={styles.resetSuccess}>{resetMessage}</div>}
 
-              {!resetToken ? (
+              {resetStep === 'email' && (
                 <form onSubmit={handleForgotPassword}>
                   <div style={styles.formGroup}>
-                    <label style={styles.label}>Email Address</label>
+                    <label style={styles.label}>Registered Email</label>
                     <input
                       style={styles.input}
                       type='email'
@@ -245,14 +352,38 @@ const Login = () => {
                       value={resetFormData.email}
                       onChange={handleResetChange}
                       required
-                      placeholder='Enter your email'
+                      placeholder='Enter your account email'
                     />
                   </div>
                   <button style={styles.secondaryButton} type='submit' disabled={resetLoading}>
-                    {resetLoading ? 'Checking...' : 'Verify Email'}
+                    {resetLoading ? 'Sending OTP...' : 'Send OTP'}
                   </button>
                 </form>
-              ) : (
+              )}
+
+              {resetStep === 'otp' && (
+                <form onSubmit={handleVerifyOtp}>
+                  <div style={styles.formGroup}>
+                    <label style={styles.label}>Email OTP</label>
+                    <input
+                      style={{ ...styles.input, ...styles.otpInput }}
+                      type='text'
+                      name='otp'
+                      value={resetFormData.otp}
+                      onChange={handleResetChange}
+                      required
+                      maxLength='6'
+                      placeholder='000000'
+                      autoComplete='one-time-code'
+                    />
+                  </div>
+                  <button style={styles.secondaryButton} type='submit' disabled={resetLoading}>
+                    {resetLoading ? 'Verifying...' : 'Verify OTP'}
+                  </button>
+                </form>
+              )}
+
+              {resetStep === 'password' && (
                 <form onSubmit={handleResetPassword}>
                   <div style={styles.formGroup}>
                     <label style={styles.label}>New Password</label>
@@ -285,14 +416,20 @@ const Login = () => {
                   </button>
                 </form>
               )}
-            </div>
+
+              {resetStep === 'done' && (
+                <button style={styles.secondaryButton} type='button' onClick={closeResetForm}>
+                  Back to Sign In
+                </button>
+              )}
+            </section>
           )}
 
           <p style={styles.link}>
             Don't have an account?{' '}
-            <Link to='/register'>CREATE ACCOUNT</Link>
+            <Link to='/register' style={styles.linkAccent}>CREATE ACCOUNT</Link>
           </p>
-        </div>
+        </main>
       </div>
     </div>
   );
@@ -301,31 +438,116 @@ const Login = () => {
 const styles = {
   page: {
     minHeight: '100vh',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#eef3f8',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    padding: '26px',
+    boxSizing: 'border-box',
+    fontFamily: 'Arial, sans-serif'
   },
-  center: {
+  shell: {
+    display: 'flex',
+    width: '100%',
+    borderRadius: '18px',
+    overflow: 'hidden',
+    backgroundColor: 'white',
+    boxShadow: '0 24px 70px rgba(15, 42, 67, 0.18)',
+    border: '1px solid #dce6f0'
+  },
+  sidePanel: {
+    boxSizing: 'border-box',
+    padding: '34px',
+    background: 'linear-gradient(160deg, #061b33 0%, #0b315c 58%, #1261c3 100%)',
+    color: 'white',
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
-    gap: '28px',
-    width: '100%',
-    maxWidth: '440px',
-    padding: '24px'
+    justifyContent: 'space-between',
+    gap: '28px'
   },
-  logoBox: { display: 'flex', justifyContent: 'center' },
+  brandBlock: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: '22px'
+  },
+  brandDivider: {
+    width: '54px',
+    height: '3px',
+    borderRadius: '99px',
+    backgroundColor: '#35c2ff'
+  },
+  heroTitle: {
+    margin: 0,
+    fontSize: '30px',
+    lineHeight: 1.18,
+    fontWeight: '800',
+    letterSpacing: 0
+  },
+  heroText: {
+    margin: 0,
+    color: '#dbeafe',
+    fontSize: '14px',
+    lineHeight: 1.7
+  },
+  roleGrid: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '10px'
+  },
+  roleChip: {
+    padding: '10px 13px',
+    borderRadius: '8px',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    border: '1px solid rgba(255,255,255,0.18)',
+    color: '#f8fafc',
+    fontSize: '13px',
+    fontWeight: '700'
+  },
+  sideStats: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: '12px'
+  },
+  statNumber: {
+    fontSize: '24px',
+    fontWeight: '800'
+  },
+  statLabel: {
+    marginTop: '4px',
+    color: '#bfdbfe',
+    fontSize: '12px',
+    textTransform: 'uppercase'
+  },
   card: {
-    backgroundColor: 'white',
-    padding: '40px 36px',
-    borderRadius: '16px',
-    boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
-    width: '100%',
-    border: '1px solid #e8e8e8'
+    boxSizing: 'border-box',
+    backgroundColor: '#ffffff'
   },
-  title: { fontSize: '26px', fontWeight: '700', color: '#2d2d2d', marginBottom: '6px' },
-  subtitle: { color: '#999', fontSize: '14px', marginBottom: '28px' },
+  cardHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '28px'
+  },
+  eyebrow: {
+    color: '#2563eb',
+    fontSize: '12px',
+    fontWeight: '800',
+    letterSpacing: '1px',
+    marginBottom: '10px'
+  },
+  title: {
+    fontSize: '32px',
+    fontWeight: '800',
+    color: '#0f172a',
+    margin: 0,
+    letterSpacing: 0
+  },
+  subtitle: {
+    color: '#64748b',
+    fontSize: '14px',
+    margin: '10px 0 0'
+  },
   formGroup: { marginBottom: '20px' },
   passwordHeader: {
     display: 'flex',
@@ -337,31 +559,37 @@ const styles = {
   label: {
     display: 'block',
     marginBottom: '8px',
-    color: '#555',
-    fontSize: '13px',
-    fontWeight: '600',
+    color: '#334155',
+    fontSize: '12px',
+    fontWeight: '800',
     textTransform: 'uppercase',
-    letterSpacing: '0.5px'
+    letterSpacing: '0.6px'
   },
   textButton: {
     border: 'none',
     background: 'transparent',
-    color: '#4A4A4A',
+    color: '#2563eb',
     fontSize: '13px',
-    fontWeight: '600',
+    fontWeight: '800',
     cursor: 'pointer',
     padding: 0
   },
   input: {
     width: '100%',
-    padding: '12px 16px',
-    border: '1.5px solid #e0e0e0',
-    borderRadius: '10px',
-    fontSize: '14px',
-    color: '#2d2d2d',
+    padding: '14px 16px',
+    border: '1.5px solid #d7e0ea',
+    borderRadius: '8px',
+    fontSize: '15px',
+    color: '#0f172a',
     outline: 'none',
     boxSizing: 'border-box',
-    backgroundColor: '#fafafa'
+    backgroundColor: '#f8fafc'
+  },
+  otpInput: {
+    textAlign: 'center',
+    fontSize: '22px',
+    fontWeight: '800',
+    letterSpacing: '8px'
   },
   suggestions: {
     position: 'absolute',
@@ -369,120 +597,160 @@ const styles = {
     left: 0,
     right: 0,
     backgroundColor: 'white',
-    border: '1.5px solid #e0e0e0',
-    borderRadius: '10px',
-    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+    border: '1.5px solid #d7e0ea',
+    borderRadius: '8px',
+    boxShadow: '0 14px 34px rgba(15, 42, 67, 0.12)',
     zIndex: 999,
     overflow: 'hidden',
-    marginTop: '4px'
+    marginTop: '6px'
   },
   suggestionItem: {
     padding: '12px 16px',
     cursor: 'pointer',
     fontSize: '14px',
-    color: '#2d2d2d',
+    color: '#0f172a',
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    borderBottom: '1px solid #f5f5f5'
+    borderBottom: '1px solid #eef2f7'
   },
   button: {
     width: '100%',
-    padding: '13px',
-    backgroundColor: '#4A4A4A',
+    padding: '15px',
+    backgroundColor: '#2563eb',
     color: 'white',
     border: 'none',
-    borderRadius: '10px',
+    borderRadius: '8px',
     fontSize: '15px',
-    fontWeight: '600',
+    fontWeight: '800',
     cursor: 'pointer',
     marginTop: '8px',
-    letterSpacing: '0.3px'
+    boxShadow: '0 12px 24px rgba(37, 99, 235, 0.24)'
   },
   secondaryButton: {
     width: '100%',
-    padding: '12px',
-    backgroundColor: '#4A4A4A',
+    padding: '13px',
+    backgroundColor: '#0f2a43',
     color: 'white',
     border: 'none',
-    borderRadius: '10px',
+    borderRadius: '8px',
     fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    letterSpacing: '0.3px'
+    fontWeight: '800',
+    cursor: 'pointer'
   },
   error: {
     backgroundColor: '#fff5f5',
-    color: '#e53e3e',
+    color: '#dc2626',
     padding: '12px 16px',
-    borderRadius: '10px',
+    borderRadius: '8px',
     marginBottom: '20px',
     fontSize: '14px',
-    borderLeft: '3px solid #e53e3e'
+    borderLeft: '4px solid #dc2626'
   },
   resetPanel: {
-    marginTop: '20px',
-    padding: '18px',
-    border: '1.5px solid #e0e0e0',
-    borderRadius: '10px',
-    backgroundColor: '#fafafa'
+    marginTop: '24px',
+    padding: '22px',
+    border: '1.5px solid #d7e0ea',
+    borderRadius: '12px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 12px 28px rgba(15, 42, 67, 0.08)'
   },
   resetHeader: {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
+    gap: '16px',
     marginBottom: '16px'
+  },
+  resetEyebrow: {
+    color: '#2563eb',
+    fontSize: '11px',
+    fontWeight: '800',
+    letterSpacing: '0.8px',
+    marginBottom: '6px'
   },
   resetTitle: {
     margin: 0,
-    color: '#2d2d2d',
-    fontSize: '15px',
-    fontWeight: '700',
-    letterSpacing: '0.5px'
+    color: '#0f172a',
+    fontSize: '20px',
+    fontWeight: '800',
+    letterSpacing: 0
   },
   closeButton: {
     border: 'none',
-    background: 'transparent',
-    color: '#999',
+    background: '#eef2f7',
+    color: '#64748b',
     cursor: 'pointer',
-    fontSize: '18px',
-    lineHeight: 1
+    fontSize: '16px',
+    lineHeight: 1,
+    borderRadius: '8px',
+    width: '32px',
+    height: '32px'
+  },
+  steps: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+    gap: '8px',
+    marginBottom: '16px'
+  },
+  stepPill: {
+    padding: '9px 8px',
+    borderRadius: '8px',
+    backgroundColor: '#f1f5f9',
+    color: '#64748b',
+    fontSize: '12px',
+    fontWeight: '800',
+    textAlign: 'center'
+  },
+  stepPillActive: {
+    backgroundColor: '#dbeafe',
+    color: '#1d4ed8'
   },
   resetError: {
     backgroundColor: '#fff5f5',
-    color: '#e53e3e',
-    padding: '10px 12px',
+    color: '#dc2626',
+    padding: '11px 13px',
     borderRadius: '8px',
     marginBottom: '14px',
     fontSize: '13px',
-    borderLeft: '3px solid #e53e3e'
+    borderLeft: '4px solid #dc2626'
   },
   resetSuccess: {
-    backgroundColor: '#f0fff4',
-    color: '#2f855a',
-    padding: '10px 12px',
+    backgroundColor: '#ecfdf5',
+    color: '#047857',
+    padding: '11px 13px',
     borderRadius: '8px',
     marginBottom: '14px',
     fontSize: '13px',
-    borderLeft: '3px solid #2f855a'
+    borderLeft: '4px solid #10b981'
   },
-  link: { textAlign: 'center', marginTop: '24px', fontSize: '14px', color: '#999' },
+  link: {
+    textAlign: 'center',
+    marginTop: '26px',
+    fontSize: '14px',
+    color: '#64748b'
+  },
+  linkAccent: {
+    color: '#2563eb',
+    fontWeight: '700',
+    textDecoration: 'none'
+  },
   suggestionAvatar: {
     width: '32px',
     height: '32px',
     borderRadius: '50%',
-    background: 'linear-gradient(135deg, #4A4A4A, #2d2d2d)',
+    background: 'linear-gradient(135deg, #0f2a43, #2563eb)',
     color: 'white',
     fontSize: '13px',
-    fontWeight: '700',
+    fontWeight: '800',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0
   },
   suggestionInfo: { display: 'flex', flexDirection: 'column', gap: '2px' },
-  suggestionName: { fontSize: '13px', fontWeight: '600', color: '#2d2d2d' },
-  suggestionEmail: { fontSize: '12px', color: '#999' }
+  suggestionName: { fontSize: '13px', fontWeight: '800', color: '#0f172a' },
+  suggestionEmail: { fontSize: '12px', color: '#64748b' }
 };
 
 export default Login;
